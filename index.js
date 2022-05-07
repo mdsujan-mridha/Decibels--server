@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 5000;
 const app = express();
 
@@ -9,9 +9,6 @@ const app = express();
 
 app.use(express.json());
 app.use(cors());
-
-
-
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ghlbv.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
@@ -21,7 +18,7 @@ async function run(){
     try{
     await client.connect();
     const productCollection = client.db("decibel").collection("product");
-    app.get('/product', async(req,res)=>{
+    app.get('/products', async(req,res)=>{
 
         const query = {}
         const cursor = productCollection.find(query);
@@ -35,6 +32,34 @@ async function run(){
         const result = await productCollection.insertOne(addNewProduct);
         res.send(result);
     })
+    app.get('/products/:id',async(req,res)=>{
+        const id = req.params.id;
+        const query = {_id:ObjectId(id)};
+        const product = await productCollection.findOne(query);
+        res.send(product);
+    })
+    app.put('/products/:id',async(req,res)=>{
+        const ids = req.body;
+        const query = {_id:{$in:ids}};
+        const product = await productCollection.find(query);
+         res.send(product);
+         console.log(product);
+    });
+    // delete 
+    app.delete('/products/:id', async(req,res) =>{
+        const id = req.params.id;
+        const query = {_id:ObjectId(id)}
+         const result = await productCollection.deleteOne(query);
+         res.send(result);
+    })
+    app.get('/myitem',async(req,res)=>{
+        const query = {}
+        const cursor = productCollection.find(query);
+        const myitem = await cursor.toArray()
+        res.send(myitem);
+    })
+
+
 
     }
     finally{
